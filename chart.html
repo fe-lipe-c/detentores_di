@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #vis.vega-embed {
+      width: 100%;
+      display: flex;
+    }
+
+    #vis.vega-embed details,
+    #vis.vega-embed details summary {
+      position: relative;
+    }
+  </style>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5.14.1"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    (function(vegaEmbed) {
+      var spec = {"config": {"view": {"continuousWidth": 300, "continuousHeight": 300}}, "layer": [{"mark": {"type": "bar"}, "encoding": {"color": {"value": "#1f77b4"}, "tooltip": [{"field": "Comprador", "type": "quantitative"}], "x": {"field": "Comprador", "title": "Quantidade de contratos", "type": "quantitative"}, "y": {"field": "Participante", "sort": "-x", "type": "nominal"}}}, {"mark": {"type": "bar"}, "encoding": {"color": {"value": "#ff7f0e"}, "tooltip": [{"field": "Vendedor", "type": "quantitative"}], "x": {"field": "Vendedor", "title": "Quantidade de contratos", "type": "quantitative"}, "y": {"field": "Participante", "sort": "-x", "type": "nominal"}}}], "data": {"name": "data-f66fecc24336ae7175895d0d5e2c8a94"}, "height": 500, "title": "Volume de contratos negociados por participante (2023-11-17)", "width": 800, "$schema": "https://vega.github.io/schema/vega-lite/v5.14.1.json", "datasets": {"data-f66fecc24336ae7175895d0d5e2c8a94": [{"Participante": "BTG PACTUAL CTVM S/A", "Comprador": 704557, "Vendedor": -642621, "Vol_Total": 1347178}, {"Participante": "ITAU CV S/A", "Comprador": 465614, "Vendedor": -354845, "Vol_Total": 820459}, {"Participante": "XP INVESTIMENTOS CCTVM S/A", "Comprador": 377711, "Vendedor": -480176, "Vol_Total": 857887}, {"Participante": "TERRA INVESTIMENTOS DTVM LTDA", "Comprador": 347896, "Vendedor": -197383, "Vol_Total": 545279}, {"Participante": "UBS BRASIL CCTVM S/A", "Comprador": 338382, "Vendedor": -312614, "Vol_Total": 650996}, {"Participante": "BRADESCO S/A CTVM", "Comprador": 266927, "Vendedor": -399590, "Vol_Total": 666517}, {"Participante": "BGC LIQUIDEZ DTVM LTDA", "Comprador": 150206, "Vendedor": -109356, "Vol_Total": 259562}, {"Participante": "IDEAL CTVM S.A.", "Comprador": 120850, "Vendedor": -123353, "Vol_Total": 244203}, {"Participante": "C6 CORRETORA DE TITULOS E VALORES MOBILIARIOS LTDA", "Comprador": 117331, "Vendedor": -134132, "Vol_Total": 251463}, {"Participante": "CM CAPITAL MARKETS CORRETORA DE C\u00c2MBIO  T\u00cdTULOS E VALORES MO", "Comprador": 97695, "Vendedor": -49967, "Vol_Total": 147662}, {"Participante": "GENIAL INSTITUCIONAL CCTVM S/A", "Comprador": 87546, "Vendedor": -82708, "Vol_Total": 170254}, {"Participante": "NECTON INVESTIMENTOS - BTG PACTUAL CTVM S.A", "Comprador": 86266, "Vendedor": -76839, "Vol_Total": 163105}, {"Participante": "CREDIT SUISSE (BRASIL) S.A. CTVM", "Comprador": 75591, "Vendedor": -79196, "Vol_Total": 154787}, {"Participante": "TULLETT PREBON BRASIL CVC LTDA.", "Comprador": 73518, "Vendedor": -83844, "Vol_Total": 157362}, {"Participante": "GUIDE INVESTIMENTOS SA CORRETORA DE VALORES", "Comprador": 66087, "Vendedor": -129916, "Vol_Total": 196003}, {"Participante": "RENASCENCA DTVM LTDA", "Comprador": 42503, "Vendedor": -36005, "Vol_Total": 78508}, {"Participante": "ATIVA INVESTIMENTOS S/A CTCV", "Comprador": 34663, "Vendedor": -36830, "Vol_Total": 71493}, {"Participante": "ORAMA DTVM S.A.", "Comprador": 24420, "Vendedor": -10886, "Vol_Total": 35306}, {"Participante": "SANTANDER CCVM S/A", "Comprador": 16428, "Vendedor": -151109, "Vol_Total": 167537}, {"Participante": "LEV DTVM LTDA", "Comprador": 14667, "Vendedor": -7299, "Vol_Total": 21966}, {"Participante": "PLANNER CORRETORA DE VALORES S/A", "Comprador": 12540, "Vendedor": -12000, "Vol_Total": 24540}, {"Participante": "J.P. MORGAN CCVM S/A", "Comprador": 7180, "Vendedor": -6793, "Vol_Total": 13973}, {"Participante": "MORGAN STANLEY CTVM S/A", "Comprador": 5055, "Vendedor": -12520, "Vol_Total": 17575}, {"Participante": "NOVA FUTURA CTVM LTDA", "Comprador": 3664, "Vendedor": -2202, "Vol_Total": 5866}, {"Participante": "GOLDMAN SACHS DO BRASIL CTVM SA", "Comprador": 3061, "Vendedor": -7429, "Vol_Total": 10490}, {"Participante": "H.COMMCOR DTVM LTDA", "Comprador": 2597, "Vendedor": -2597, "Vol_Total": 5194}, {"Participante": "INTER DISTRIBUIDORA DE TITULOS E VALORES MOBILIARIOS LTDA", "Comprador": 2124, "Vendedor": -2735, "Vol_Total": 4859}, {"Participante": "MIRAE ASSET WEALTH MANAGEMENT (BRASIL) CCTVM LTDA.", "Comprador": 214, "Vendedor": -256, "Vol_Total": 470}, {"Participante": "RB INVESTIMENTOS DTVM LTDA", "Comprador": 120, "Vendedor": -150, "Vol_Total": 270}, {"Participante": "MERCANTIL DO BRASIL C. S/A CTVM", "Comprador": 50, "Vendedor": -50, "Vol_Total": 100}]}};
+      var embedOpt = {"mode": "vega-lite"};
+
+      function showError(el, error){
+          el.innerHTML = ('<div style="color:red;">'
+                          + '<p>JavaScript Error: ' + error.message + '</p>'
+                          + "<p>This usually means there's a typo in your chart specification. "
+                          + "See the javascript console for the full traceback.</p>"
+                          + '</div>');
+          throw error;
+      }
+      const el = document.getElementById('vis');
+      vegaEmbed("#vis", spec, embedOpt)
+        .catch(error => showError(el, error));
+    })(vegaEmbed);
+
+  </script>
+</body>
+</html>
