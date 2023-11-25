@@ -6,9 +6,12 @@ import config as cfg
 
 begin_date = "2023-11-08"
 end_date = "2023-11-08"
+begin_time = "09:00:00"
+end_time = "10:30:00"
 df = query_di(begin_date, end_date)
+df
 df = df.query(
-    'DataHoraFechamento >= "2023-11-09 09:00:00" and DataHoraFechamento <= "2023-11-09 10:30:00"'
+    f'DataHoraFechamento >= "{begin_date} {begin_time}" and DataHoraFechamento <= "{end_date} {end_time}"'
 )
 df.reset_index(drop=True, inplace=True)
 df
@@ -45,6 +48,7 @@ df_seller["Quantidade"] = df_seller["Quantidade"] * -1
 
 df_total = pd.concat([df_buyer, df_seller])
 df_total.reset_index(drop=True, inplace=True)
+df_total
 # Get the total quantity of contracts traded by each instrument
 df_total["newcod"] = df_total["CodigoInstrumento"].apply(
     lambda x: x if x in list_cod[:5] else "Outros"
