@@ -3,87 +3,195 @@ import numpy as np
 import altair as alt
 from utils import query_di
 import config as cfg
+from detentores import df_compra_venda
 
-begin_date = "2023-11-08"
-end_date = "2023-11-08"
+alt.data_transformers.enable("vegafusion")
+
+begin_date = "2023-11-09"
+end_date = "2023-11-09"
 begin_time = "09:00:00"
-end_time = "10:30:00"
+end_time = "18:30:00"
+
+# df = df_compra_venda(begin_date, begin_time, end_date, end_time)
+
 df = query_di(begin_date, end_date)
-df
-df = df.query(
-    f'DataHoraFechamento >= "{begin_date} {begin_time}" and DataHoraFechamento <= "{end_date} {end_time}"'
-)
-df.reset_index(drop=True, inplace=True)
-df
 
-df_contracts = (
-    df.groupby(["CodigoInstrumento"]).agg({"QuantidadeNegociada": "sum"}).reset_index()
-)
-df_contracts.sort_values(by=["QuantidadeNegociada"], ascending=False, inplace=True)
-df_contracts.reset_index(drop=True, inplace=True)
-list_cod = df_contracts["CodigoInstrumento"].tolist()
-
-# Sum the quantity of contracts traded by each participant, separated by buyer and seller.
-df_buyer = (
-    df.groupby(["Comprador", "CodigoInstrumento"])
-    .agg({"QuantidadeNegociada": "sum"})
-    .reset_index()
-)
-df_seller = (
-    df.groupby(["Vendedor", "CodigoInstrumento"])
-    .agg({"QuantidadeNegociada": "sum"})
-    .reset_index()
-)
-df_seller["Tipo"] = "Vendedor"
-df_buyer["Tipo"] = "Comprador"
-df_seller.rename(
-    columns={"Vendedor": "Participante", "QuantidadeNegociada": "Quantidade"},
+df.drop(
+    columns=[
+        "CodigoParticipanteVendedor",
+        "CodigoParticipanteComprador",
+        "DataReferencia",
+        "PrecoNegocio",
+    ],
     inplace=True,
 )
-df_buyer.rename(
-    columns={"Comprador": "Participante", "QuantidadeNegociada": "Quantidade"},
-    inplace=True,
-)
-df_seller["Quantidade"] = df_seller["Quantidade"] * -1
 
-df_total = pd.concat([df_buyer, df_seller])
-df_total.reset_index(drop=True, inplace=True)
-df_total
-# Get the total quantity of contracts traded by each instrument
-df_total["newcod"] = df_total["CodigoInstrumento"].apply(
-    lambda x: x if x in list_cod[:5] else "Outros"
+participantes_venda = df["Vendedor"].unique().tolist()
+participantes_compra = df["Comprador"].unique().tolist()
+# Conjunto dos participantes
+participantes = set(participantes_venda + participantes_compra)
+participantes = list(participantes)
+
+df_melted = pd.melt(
+    df,
+    id_vars=["DataHoraFechamento", "QuantidadeNegociada", "CodigoInstrumento"],
+    value_vars=["Vendedor", "Comprador"],
+    var_name="Transacao",
+    value_name="Participante",
 )
 
-chart_buyer = (
-    alt.Chart(df_total)
-    .mark_bar()
-    .encode(
-        alt.X("Quantidade", title="Quantidade de contratos", sort="size"),
-        alt.Y("Participante", sort="y"),
-        color=alt.Color("newcod").scale(scheme="tableau10"),
-    )
+transaction_dict = {"Vendedor": -1, "Comprador": 1}
+df_melted["QuantidadeNegociada"] = df_melted["QuantidadeNegociada"] * df_melted[
+    "Transacao"
+].map(transaction_dict)
+
+df_melted.sort_values(by=["DataHoraFechamento"], inplace=True)
+df_melted.reset_index(drop=True, inplace=True)
+df_grouped = df_melted.groupby(
+    ["DataHoraFechamento", "Participante", "CodigoInstrumento"], as_index=False
+)["QuantidadeNegociada"].sum()
+df_grouped["NetPosition"] = df_grouped.groupby(["Participante", "CodigoInstrumento"])[
+    "QuantidadeNegociada"
+].cumsum()
+df_grouped.reset_index(drop=True, inplace=True)
+df_grouped["Participante"].unique()
+contrato_ = "DI1F33"
+df_grouped_f25 = df_grouped.query(f"CodigoInstrumento == '{contrato_}'")
+
+
+list_dealers_stn = [
+    "ITAU CV S/A",
+    "BRADESCO S/A CTVM",
+    "BTG PACTUAL CTVM S/A",
+    "XP INVESTIMENTOS CCTVM S.A.",
+    "BGC LIQUIDEZ DTVM LTDA",
+    "TERRA INVESTIMENTOS DTVM LTDA",
+    "J.P. MORGAN CCVM S/A",
+    "GOLDMAN SACHS DO BRASIL CTVM SA",
+    "BANCO DO BRASIL S.A.",
+    "CAIXA ECONOMICA FEDERAL",
+    "SANTANDER CCVM S/A",
+]
+
+df_grouped_dealers = df_grouped_f25[
+    df_grouped_f25["Participante"].isin(list_dealers_stn)
+]
+df_grouped_dealers.reset_index(drop=True, inplace=True)
+
+new_names = {
+    "SANTANDER CCVM S/A": "SANTANDER",
+    "BANCO DO BRASIL S.A.": "BB",
+    "CAIXA ECONOMICA FEDERAL": "CEF",
+    "XP INVESTIMENTOS CCTVM S.A.": "XP",
+    "BRADESCO S/A CTVM": "BRADESCO",
+    "BTG PACTUAL CTVM S/A": "BTG",
+    "ITAU CV S/A": "ITAU",
+    "J.P. MORGAN CCVM S/A": "JP",
+    "GOLDMAN SACHS DO BRASIL CTVM SA": "GS",
+    "BGC LIQUIDEZ DTVM LTDA": "BGC",
+    "TERRA INVESTIMENTOS DTVM LTDA": "TERRA",
+}
+
+df_grouped_dealers["Participante"] = df_grouped_dealers["Participante"].map(new_names)
+
+eventos = pd.DataFrame(
+    [
+        {
+            "start": f"{begin_date} 09:40:00",
+            "end": f"{begin_date} 09:40:00",
+            "event": "Pré-Lote",
+        },
+        {
+            "start": f"{begin_date} 10:30:00",
+            "end": f"{begin_date} 10:30:00",
+            "event": "Portarias",
+        },
+        {
+            "start": f"{begin_date} 11:45:00",
+            "end": f"{begin_date} 11:45:00",
+            "event": "Resultado",
+        },
+    ]
 )
-chart_seller = (
-    alt.Chart(df_total)
-    .mark_bar()
-    .encode(
-        alt.X("Quantidade", title="Quantidade de contratos", sort="size"),
-        alt.Y("Participante", sort="y"),
-        color=alt.Color("newcod").scale(scheme="viridis"),
-    )
-)
-# Insert vertical rule in the 0 value
+
 chart_rule = (
-    alt.Chart(pd.DataFrame({"x": [0]}))
-    .mark_rule(color="black", strokeWidth=2)
-    .encode(x="x")
+    alt.Chart(eventos).mark_rule(color="black", strokeWidth=1).encode(alt.X("start:T"))
 )
-chart_total = (chart_buyer + chart_seller + chart_rule).properties(
-    width=1200,
-    height=1000,
-    title=f"Volume de contratos negociados por participante ({begin_date})",
-)  # ,background="#f0f8ff")
+chart_text = (
+    alt.Chart(eventos)
+    .mark_text(
+        align="left",
+        baseline="top",
+        dy=-147,
+        dx=1,
+        size=4,
+    )
+    .encode(alt.X("start:T"), text="event:N")
+)
+
+chart_position = (
+    alt.Chart(
+        df_grouped_dealers,
+        title=f"Net Position {contrato_} - Período: {begin_date} - {end_date}",
+    )
+    .mark_line()
+    .encode(
+        alt.X(
+            "DataHoraFechamento:T",
+            axis=alt.Axis(
+                format="%H:%M",
+                labelFontSize=4,
+                # titleFontSize=10,
+                title="Data",
+            ),
+        ),
+        alt.Y("NetPosition"),
+        color="Participante",
+    )
+)
+
+chart_total = chart_position + chart_rule + chart_text
+
+chart_total.properties(width=5000, height=5000).configure_axis(grid=False)
+
 chart_total.save("chart_total.html")
+df_grouped_dealers.info()
+
+chart_position.properties(width=1000, height=1000).configure_axis(grid=False)
+chart_position.save("chart_position.html")
+
+# 0      2023-11-20 09:00:00.023           ITAU CV S/A                    0
+
+# chart_buyer = (
+#     alt.Chart(df_total)
+#     .mark_bar()
+#     .encode(
+#         alt.X("Quantidade", title="Quantidade de contratos", sort="size"),
+#         alt.Y("Participante", sort="y"),
+#         color=alt.Color("newcod").scale(scheme="tableau10"),
+#     )
+# )
+# chart_seller = (
+#     alt.Chart(df_total)
+#     .mark_bar()
+#     .encode(
+#         alt.X("Quantidade", title="Quantidade de contratos", sort="size"),
+#         alt.Y("Participante", sort="y"),
+#         color=alt.Color("newcod").scale(scheme="viridis"),
+#     )
+# )
+# # Insert vertical rule in the 0 value
+# chart_rule = (
+#     alt.Chart(pd.DataFrame({"x": [0]}))
+#     .mark_rule(color="black", strokeWidth=2)
+#     .encode(x="x")
+# )
+# chart_total = (chart_buyer + chart_seller + chart_rule).properties(
+#     width=1200,
+#     height=1000,
+#     title=f"Volume de contratos negociados por participante ({begin_date})",
+# )  # ,background="#f0f8ff")
+# chart_total.save("chart_total.html")
 
 # chart_buyer = (
 #     alt.Chart(df_total)
