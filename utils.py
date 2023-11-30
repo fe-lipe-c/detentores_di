@@ -6,7 +6,7 @@ client = clickhouse_driver.Client(
 )
 
 
-def query_di(begin_date, end_date):
+def query_di(begin_date, end_date, cod_security="DI1"):
     """Query data from Clickhouse database."""
 
     sql = f"""
@@ -19,8 +19,8 @@ def query_di(begin_date, end_date):
         toFloat64(PrecoNegocio) AS PrecoNegocio,
         QuantidadeNegociada
     FROM TradeIntraday
-    WHERE 
-        CodigoInstrumento REGEXP '^DI[1-9]'
+    WHERE
+        CodigoInstrumento REGEXP '^{cod_security}'
         AND toDate(DataHoraFechamento) BETWEEN '{begin_date}' AND '{end_date}'
     """
 

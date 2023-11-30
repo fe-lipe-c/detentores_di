@@ -5,7 +5,59 @@ from utils import query_di
 import config as cfg
 from detentores import df_compra_venda
 
+
 alt.data_transformers.enable("vegafusion")
+
+
+import clickhouse_driver
+
+client = clickhouse_driver.Client(
+    host="localhost", database="AQDB", settings={"use_numpy": True}
+)
+
+cod_security = "DI1F33"
+
+
+sql = f"""
+SELECT
+    CodigoInstrumento,
+    DataReferencia,
+    DataHoraFechamento,
+    CodigoParticipanteComprador,
+    CodigoParticipanteVendedor,
+    toFloat64(PrecoNegocio) AS PrecoNegocio,
+    QuantidadeNegociada
+FROM TradeIntraday
+WHERE
+    CodigoInstrumento LIKE 'DI1F33'
+    AND toDate(DataHoraFechamento) BETWEEN '{begin_date}' AND '{end_date}'
+"""
+
+df = client.query_dataframe(sql)
+df.query(
+    'DataHoraFechamento >= "2023-11-09 10:10:00" and DataHoraFechamento <= "2023-11-09 10:10:02"'
+)
+
+import pyarrow.ipc as ipc
+import pyarrow as pa
+
+file_path = "/home/felipe/AlgebraQuant/data/TradeIntraday/processed/2023-11-09_TradeIntraday.arrow"
+with open(file_path, "rb") as f:
+    reader = ipc.open_file(f)
+    table = reader.read_all()
+
+record_batch = pa.RecordBatch.from_pandas(df_)
+df = table.to_pandas(strings_to_categorical=True)
+new_schema = pa.schema(
+    [
+        (field.name, pa.int32() if field.type == pa.uint32() else field.type)
+        for field in table.schema
+    ]
+)
+
+table = table.cast(new_schema)
+table
+df_processed = table.to_pandas(strings_to_categorical=True)
 
 begin_date = "2023-11-09"
 end_date = "2023-11-09"
@@ -14,7 +66,16 @@ end_time = "18:30:00"
 
 # df = df_compra_venda(begin_date, begin_time, end_date, end_time)
 
-df = query_di(begin_date, end_date)
+df = query_di(begin_date, end_date, cod_security="DI1F33")
+
+df.query(
+    'CodigoInstrumento == "DI1F33" and DataHoraFechamento >= "2023-11-09 10:10:00" and DataHoraFechamento <= "2023-11-09 10:10:02"'
+)
+
+df.query(
+    'DataHoraFechamento >= "2023-11-09 10:10:00" and DataHoraFechamento <= "2023-11-09 10:10:02"'
+)
+
 
 df.drop(
     columns=[
@@ -54,10 +115,15 @@ df_grouped["NetPosition"] = df_grouped.groupby(["Participante", "CodigoInstrumen
     "QuantidadeNegociada"
 ].cumsum()
 df_grouped.reset_index(drop=True, inplace=True)
-df_grouped["Participante"].unique()
+
 contrato_ = "DI1F33"
 df_grouped_f25 = df_grouped.query(f"CodigoInstrumento == '{contrato_}'")
+df_grouped_f25.head(15)
 
+df_grouped_f25
+df_grouped_f25.query(
+    'DataHoraFechamento >= "2023-11-09 10:10:00" and DataHoraFechamento <= "2023-11-09 10:10:02"'
+)
 
 list_dealers_stn = [
     "ITAU CV S/A",
@@ -113,6 +179,13 @@ eventos = pd.DataFrame(
         },
     ]
 )
+
+df_grouped_dealers.rename(
+    {"CodigoInstrumento": "Codigo", "QuantidadeNegociada": "Quantidade"},
+    axis=1,
+    inplace=True,
+)
+df_grouped_dealers.head(15)
 
 chart_rule = (
     alt.Chart(eventos).mark_rule(color="black", strokeWidth=1).encode(alt.X("start:T"))
@@ -234,3 +307,24 @@ chart_position.save("chart_position.html")
 # chart = (chart_comprador + chart_vendedor).properties(width=800, height=500, title=f"Volume de contratos negociados por participante ({begin_date})")
 
 # chart.save("chart.html")
+
+import pyarrow as pa
+import pyarrow.ipc as ipc
+import pandas as pd
+
+# Open the Arrow file
+with open(
+    "/home/felipe/AlgebraQuant/data/TradeIntraday/processed/2023-11-09_TradeIntraday.arrow",
+    "rb",
+) as f:
+    reader = ipc.open_file(f)
+    table = reader.read_all()
+
+# Convert the Arrow Table to a list of dictionaries
+data = [row for row in table]
+data[0]
+
+# Convert the list of dictionaries to a pandas DataFrame
+df = pd.DataFrame(data)
+
+# Now you can use df as a regular pandas DataFrame
